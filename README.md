@@ -13,13 +13,14 @@ A modern take on the classic Nokia cell phone experience, built with a Raspberry
 - **32GB microSD card** - Storage for contacts, messages, and system data
 - **microSD SDHC adapter** - Interface for storage expansion
 
-### Power Management
-- **3700mAh Lithium Battery** - Long-lasting power source
-- **TP4056 Charging Module** - Safe battery charging via USB-C
-
 ### Cellular Communication
 - **SIM7600G Module** - 4G/LTE cellular connectivity with GPS
 - Connected via UART (TX/RX) to Pico 2
+
+### Power Management
+- **3700mAh Lithium Battery** - Long-lasting power source
+- **TP4056 Charging Module** - Safe battery charging via USB-C
+- **MT3608 Boost Converter** - Boost LiPo battery to 5v for use by the SIM module and Pico
 
 ### Audio System
 - **MAX98357A I2S Amplifier** - Digital audio amplification
@@ -60,7 +61,7 @@ A modern take on the classic Nokia cell phone experience, built with a Raspberry
 - **Storage**: MicroSD card support up to 32GB
 
 ### Power
-- **Battery Life**: Multi-day usage with 3700mAh capacity
+- **Battery Life**: All-day usage with 3700mAh capacity
 - **Charging**: USB charging via TP4056 module
 - **Standby**: Ultra-low power consumption with e-paper display
 
@@ -77,6 +78,28 @@ A modern take on the classic Nokia cell phone experience, built with a Raspberry
 - **Event-Driven**: Efficient power management through interrupt-based operation
 - **Extensible**: Easy to add new features and customize behavior
 
-## Getting Started
+## Wiring Guide
+
+### SIM7600G to Raspberry Pi Pico 2
+
+The SIM7600G module connects via UART and requires the following connections:
+
+| SIM7600G Pin | Description | Connection | Notes |
+|--------------|-------------|------------|-------|
+| **V** | VCC | **5V from MT3608** | Requires stable 5V (up to 2A) |
+| **G** | Ground | **Battery -** | Battery ground |
+| **G** | Ground | **Pico GND** (Pin 38) | Shared ground with Pico |
+| **T** | TX (Module transmit) | **GP1** (Pin 2) | UART0 RX |
+| **R** | RX (Module receive) | **GP0** (Pin 1) | UART0 TX |
+| **K** | Power Key | **GP2** (Pin 4) | GPIO for power control |
+| **S** | Status | **GP3** (Pin 5) | GPIO for status monitoring |
+
+### Key Points:
+- **Power**: SIM7600G requires 5V via MT3608 boost converter for proper RF operation
+- **Current Draw**: Module can draw up to 2A during transmission bursts
+- **UART**: Cross-connect TX/RX (module TX → Pico RX, module RX → Pico TX)
+- **Power Key**: Pull HIGH briefly to turn module on/off
+- **Status**: Monitor this pin to check if module is powered and ready
+- **Dual Ground**: Connect both ground pins for stable operation
 
 *[Development in progress - setup instructions coming soon]*
