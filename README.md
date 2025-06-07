@@ -144,4 +144,43 @@ The phone uses two analog joysticks for navigation and input, connected through 
 - **Switches**: Active low with internal pull-up resistors on Pico pins (3.3V logic)
 - **Update Rate**: ~128 SPS (samples per second) for smooth control
 
+### 3V Vibration Motor
+
+The vibration motor provides haptic feedback for notifications and user interactions.
+
+#### Option 1: Direct GPIO Control (Recommended to try first)
+
+**For Low Current Motors (< 40mA):**
+
+| Motor Pin | Description | Connection | Notes |
+|-----------|-------------|------------|-------|
+| **+** | Positive | **GP16** (Pin 21) | Direct PWM control |
+| **-** | Negative | **GND** (Pin 38) | Direct ground connection |
+
+#### Option 2: Transistor-Protected Control
+
+**For Higher Current Motors (> 40mA) or if direct control fails:**
+
+| Motor Pin | Description | Connection | Notes |
+|-----------|-------------|------------|-------|
+| **+** | Positive | **GP16** (Pin 21) via NPN Transistor | PWM-controlled output |
+| **-** | Negative | **GND** (Pin 38) | Direct ground connection |
+
+**Transistor Circuit (NPN - 2N2222 or similar):**
+
+| Transistor Pin | Description | Connection | Notes |
+|----------------|-------------|------------|-------|
+| **Base** | Control | **GP16** (Pin 21) via 1kΩ resistor | PWM signal from Pico |
+| **Collector** | High side | **Motor +** | Connects to motor positive |
+| **Emitter** | Ground | **GND** (Pin 38) | Common ground |
+
+#### Key Points:
+- **Motor Specs**: 3V, 12000 RPM, small coin-type vibration motor
+- **Current Draw**: Small motors (17-35mA) can connect directly, larger motors (60-105mA) need transistor
+- **Pico GPIO Limits**: ~16mA safe, ~50mA maximum per pin
+- **Try Direct First**: Start with Option 1 - if motor doesn't work well or Pico gets warm, use Option 2
+- **Flyback Diode**: Optional 1N4001 diode across motor (cathode to +, anode to -) for back-EMF protection
+- **Control**: PWM control via GP16 allows variable vibration intensity
+- **Frequency**: Typical vibration patterns: short bursts (100-300ms) for notifications
+
 *[Development in progress - setup instructions coming soon]*
