@@ -29,7 +29,7 @@ A modern take on the classic Nokia cell phone experience, built with a Raspberry
 - **ADS1115 ADC** - High-resolution analog-to-digital conversion for microphone
 
 ### Display & Input
-- **2.9" E-Paper Display** - 296x128 resolution, SPI interface, low power consumption
+- **4.2" E-Paper Display (FPC-190)** - red/white/black, 400x300 resolution, SPI interface, low power consumption
 - **Dual-axis Analog Joystick** - Navigation and menu control
 - **3V Coin Vibration Motor** - Haptic feedback and notifications
 
@@ -182,5 +182,33 @@ The vibration motor provides haptic feedback for notifications and user interact
 - **Flyback Diode**: Optional 1N4001 diode across motor (cathode to +, anode to -) for back-EMF protection
 - **Control**: PWM control via GP16 allows variable vibration intensity
 - **Frequency**: Typical vibration patterns: short bursts (100-300ms) for notifications
+
+### 4.2" E-Paper Display (FPC-190)
+
+The 4.2" tri-color e-paper display provides the main user interface with red/white/black output at 400x300 resolution using SPI communication.
+
+**Display Module Connections:**
+
+| Display Pin | Description | Connection | Notes |
+|-------------|-------------|------------|-------|
+| **VCC** | Power | **3V3** (Pin 36) | 3.3V power supply |
+| **GND** | Ground | **GND** (Pin 38) | Common ground |
+| **CLK** | SPI Clock | **GP10** (Pin 14) | SPI1 SCK |
+| **DIN** | SPI Data In | **GP11** (Pin 15) | SPI1 MOSI (TX) |
+| **CS** | Chip Select | **GP9** (Pin 12) | SPI chip select (active low) |
+| **DC** | Data/Command | **GP12** (Pin 16) | Command mode control |
+| **RST** | Reset | **GP13** (Pin 17) | Hardware reset (active low) |
+| **BUSY** | Busy Status | **GP14** (Pin 19) | Display busy indicator |
+| **PWR** | Power Control | **GP15** (Pin 20) | Display power control |
+
+#### Key Points:
+- **SPI Interface**: Uses SPI1 on Pico 2 for high-speed communication
+- **Power Management**: Separate PWR pin allows complete display shutdown for battery saving
+- **Tri-Color Support**: Red/white/black output with partial refresh capability
+- **Resolution**: 400x300 pixels provides clear text and simple graphics
+- **Update Time**: ~2-15 seconds for full refresh, <1 second for partial updates
+- **Low Power**: Ultra-low power consumption when not updating (perfect for phone standby)
+- **BUSY Pin**: Monitor this pin to know when display update is complete
+- **Reset Control**: Hardware reset via RST pin for reliable initialization
 
 *[Development in progress - setup instructions coming soon]*
