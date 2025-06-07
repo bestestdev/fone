@@ -128,6 +128,113 @@ def get_network_attach_status():
     response = send_at_command("AT+CGATT?")
     return response
 
+# Turn GPS on
+def turn_gps_on():
+    print("\n=== Turning GPS On ===")
+    response = send_at_command("AT+CGPS=1", timeout=3)
+    return response
+
+# Turn GPS off
+def turn_gps_off():
+    print("\n=== Turning GPS Off ===")
+    response = send_at_command("AT+CGPS=0", timeout=3)
+    return response
+
+# Get GPS location information
+def get_gps_location():
+    print("\n=== GPS Location Information ===")
+    response = send_at_command("AT+CGPSINFO", timeout=5)
+    return response
+
+# Parse GPS response and extract coordinates
+def parse_gps_info(gps_response):
+    print("\n=== Parsing GPS Information ===")
+    
+    if not gps_response or "+CGPSINFO:" not in gps_response:
+        print("No valid GPS data received")
+        return None
+    
+    try:
+        # Extract the GPS data line
+        lines = gps_response.strip().split('\n')
+        gps_line = None
+        for line in lines:
+            if "+CGPSINFO:" in line:
+                gps_line = line
+                break
+        
+        if not gps_line:
+            print("GPS data line not found")
+            return None
+            
+        # Parse the GPS data: +CGPSINFO: lat,lat_dir,lon,lon_dir,date,utc_time,alt,speed,course
+        gps_data = gps_line.split(":")[1].strip()
+        parts = gps_data.split(",")
+        
+        if len(parts) >= 9 and parts[0] and parts[2]:  # Check if we have valid lat/lon
+            lat = parts[0]
+            lat_dir = parts[1]
+            lon = parts[2] 
+            lon_dir = parts[3]
+            date = parts[4]
+            utc_time = parts[5]
+            altitude = parts[6]
+            speed = parts[7]
+            course = parts[8]
+            
+            print(f"Latitude: {lat} {lat_dir}")
+            print(f"Longitude: {lon} {lon_dir}")
+            print(f"Date: {date}")
+            print(f"UTC Time: {utc_time}")
+            print(f"Altitude: {altitude} meters")
+            print(f"Speed: {speed} km/h")
+            print(f"Course: {course} degrees")
+            
+            return {
+                'latitude': f"{lat} {lat_dir}",
+                'longitude': f"{lon} {lon_dir}",
+                'date': date,
+                'utc_time': utc_time,
+                'altitude': altitude,
+                'speed': speed,
+                'course': course
+            }
+        else:
+            print("GPS fix not available - waiting for satellite lock")
+            return None
+            
+    except Exception as e:
+        print(f"Error parsing GPS data: {e}")
+        return None
+
+# Test GPS functionality with multiple attempts
+def test_gps_location():
+    print("\n=== GPS Location Test ===")
+    
+    # Turn on GPS
+    turn_gps_on()
+    print("Waiting for GPS to initialize...")
+    time.sleep(3)
+    
+    # Try to get GPS location multiple times
+    max_attempts = 10
+    for attempt in range(max_attempts):
+        print(f"\nGPS attempt {attempt + 1}/{max_attempts}")
+        gps_response = get_gps_location()
+        gps_data = parse_gps_info(gps_response)
+        
+        if gps_data:
+            print("GPS fix obtained successfully!")
+            return gps_data
+        else:
+            if attempt < max_attempts - 1:
+                print("No GPS fix yet, waiting 10 seconds...")
+                time.sleep(10)
+    
+    print("Could not obtain GPS fix after multiple attempts")
+    print("Note: GPS may need clear sky view and more time for first fix")
+    return None
+
 # Comprehensive test function
 def run_comprehensive_test():
     print("Starting comprehensive SIM7600G test...")
@@ -151,6 +258,12 @@ def run_comprehensive_test():
     get_network_operator()
     get_network_attach_status()
     get_serving_cell_info()
+    
+    # Test GPS functionality
+    gps_data = test_gps_location()
+    
+    # Turn off GPS to save power
+    turn_gps_off()
     
     print("\n=== Test Complete ===")
     return True
