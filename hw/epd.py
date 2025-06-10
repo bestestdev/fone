@@ -1,12 +1,33 @@
-from machine import Pin, SPI
-import utime
-import framebuf
+"""
+MicroPython Waveshare 4.2" Black/White/Red GDEW042Z15 e-paper display driver
+https://github.com/mcauser/micropython-waveshare-epaper
 
-# 2.9" E-Paper Display Configuration - Landscape Mode (software rotated)
-DISPLAY_WIDTH = 296  # Logical width (rotated)
-DISPLAY_HEIGHT = 128  # Logical height (rotated)
-PHYSICAL_WIDTH = 128   # Physical display width  
-PHYSICAL_HEIGHT = 296  # Physical display height
+MIT License
+Copyright (c) 2017 Waveshare
+Copyright (c) 2018 Mike Causer
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+
+from machine import Pin, SPI
+from micropython import const
+from time import sleep_ms
 
 # SPI1 Configuration for E-Paper Display
 SPI_SCK = Pin(10)    # SPI1 SCK - GP10 (Pin 14)
@@ -15,426 +36,137 @@ SPI_CS = Pin(9)      # Chip Select - GP9 (Pin 12)
 SPI_DC = Pin(12)     # Data/Command - GP12 (Pin 16)
 SPI_RST = Pin(13)    # Reset - GP13 (Pin 17)
 SPI_BUSY = Pin(14)   # Busy status - GP14 (Pin 19)
+SPI_PWR = Pin(15)    # Power - GP15 (Pin 18)
+spi = SPI(1, baudrate=20000000, polarity=0, phase=0, sck=SPI_SCK, mosi=SPI_MOSI)
 
-class EPD_2in9_B_V4_Landscape:
+# Display resolution
+EPD_WIDTH  = const(400)
+EPD_HEIGHT = const(300)
+
+# Display commands
+PANEL_SETTING                  = const(0x00)
+#POWER_SETTING                  = const(0x01)
+POWER_OFF                      = const(0x02)
+#POWER_OFF_SEQUENCE_SETTING     = const(0x03)
+POWER_ON                       = const(0x04)
+#POWER_ON_MEASURE               = const(0x05)
+BOOSTER_SOFT_START             = const(0x06)
+DEEP_SLEEP                     = const(0x07)
+DATA_START_TRANSMISSION_1      = const(0x10)
+#DATA_STOP                      = const(0x11)
+DISPLAY_REFRESH                = const(0x12)
+DATA_START_TRANSMISSION_2      = const(0x13)
+#VCOM_LUT                       = const(0x20)
+#W2W_LUT                        = const(0x21)
+#B2W_LUT                        = const(0x22)
+#W2B_LUT                        = const(0x23)
+#B2B_LUT                        = const(0x24)
+#PLL_CONTROL                    = const(0x30)
+#TEMPERATURE_SENSOR_CALIBRATION = const(0x40)
+#TEMPERATURE_SENSOR_SELECTION   = const(0x41)
+#TEMPERATURE_SENSOR_WRITE       = const(0x42)
+#TEMPERATURE_SENSOR_READ        = const(0x43)
+VCOM_AND_DATA_INTERVAL_SETTING = const(0x50)
+#LOW_POWER_DETECTION            = const(0x51)
+#TCON_SETTING                   = const(0x60)
+#RESOLUTION_SETTING             = const(0x61)
+#GSST_SETTING                   = const(0x65)
+#GET_STATUS                     = const(0x71)
+#AUTO_MEASURE_VCOM              = const(0x80)
+#VCOM_VALUE                     = const(0x81)
+#VCM_DC_SETTING                 = const(0x82)
+#PARTIAL_WINDOW                 = const(0x90)
+#PARTIAL_IN                     = const(0x91)
+#PARTIAL_OUT                    = const(0x92)
+#PROGRAM_MODE                   = const(0xA0)
+#ACTIVE_PROGRAM                 = const(0xA1)
+#READ_OTP_DATA                  = const(0xA2)
+#POWER_SAVING                   = const(0xE3)
+
+BUSY = const(0)  # 0=busy, 1=idle
+
+class EPD:
     def __init__(self):
-        self.reset_pin = Pin(SPI_RST, Pin.OUT)
-        
-        self.busy_pin = Pin(SPI_BUSY, Pin.IN, Pin.PULL_UP)
-        self.cs_pin = Pin(SPI_CS, Pin.OUT)
-        # Use physical dimensions for the actual e-paper display
-        if PHYSICAL_WIDTH % 8 == 0:
-            self.width = PHYSICAL_WIDTH
-        else :
-            self.width = (PHYSICAL_WIDTH // 8) * 8 + 8
-        self.height = PHYSICAL_HEIGHT
-        
-        # Logical dimensions for user applications
-        self.logical_width = DISPLAY_WIDTH
-        self.logical_height = DISPLAY_HEIGHT
-        
-        self.spi = SPI(1,baudrate=4000_000,sck=Pin(SPI_SCK),mosi=Pin(SPI_MOSI))
-        self.dc_pin = Pin(SPI_DC, Pin.OUT)
-        
-        
-        self.buffer_balck = bytearray(self.height * self.width // 8)
-        self.buffer_red = bytearray(self.height * self.width // 8)
-        self.imageblack = framebuf.FrameBuffer(self.buffer_balck, self.width, self.height, framebuf.MONO_HLSB)
-        self.imagered = framebuf.FrameBuffer(self.buffer_red, self.width, self.height, framebuf.MONO_HLSB)
-        self.init()
+        self.spi = spi
+        self.cs = SPI_CS
+        self.dc = SPI_DC
+        self.rst = SPI_RST
+        self.busy = SPI_BUSY
+        self.pwr = SPI_PWR
+        self.cs.init(self.cs.OUT, value=1)
+        self.dc.init(self.dc.OUT, value=0)
+        self.rst.init(self.rst.OUT, value=0)
+        self.busy.init(self.busy.IN)
+        self.width = EPD_WIDTH
+        self.height = EPD_HEIGHT
 
-    def digital_write(self, pin, value):
-        pin.value(value)
+    def _command(self, command, data=None):
+        self.dc(0)
+        self.cs(0)
+        self.spi.write(bytearray([command]))
+        self.cs(1)
+        if data is not None:
+            self._data(data)
 
-    def digital_read(self, pin):
-        return pin.value()
-
-    def delay_ms(self, delaytime):
-        utime.sleep(delaytime / 1000.0)
-
-    def spi_writebyte(self, data):
-        self.spi.write(bytearray(data))
-
-    def module_exit(self):
-        self.digital_write(self.reset_pin, 0)
-
-    # Hardware reset
-    def reset(self):
-        self.digital_write(self.reset_pin, 1)
-        self.delay_ms(50)
-        self.digital_write(self.reset_pin, 0)
-        self.delay_ms(2)
-        self.digital_write(self.reset_pin, 1)
-        self.delay_ms(50)
-
-
-    def send_command(self, command):
-        self.digital_write(self.dc_pin, 0)
-        self.digital_write(self.cs_pin, 0)
-        self.spi_writebyte([command])
-        self.digital_write(self.cs_pin, 1)
-
-    def send_data(self, data):
-        self.digital_write(self.dc_pin, 1)
-        self.digital_write(self.cs_pin, 0)
-        self.spi_writebyte([data])
-        self.digital_write(self.cs_pin, 1)
-        
-    def send_data1(self, buf):
-        self.digital_write(self.dc_pin, 1)
-        self.digital_write(self.cs_pin, 0)
-        self.spi.write(bytearray(buf))
-        self.digital_write(self.cs_pin, 1)
-        
-    def ReadBusy(self):
-        print('busy')
-        while(self.digital_read(self.busy_pin) == 1): 
-            self.delay_ms(10) 
-        print('busy release')
-        self.delay_ms(20)
-        
-    def TurnOnDisplay(self):
-        self.send_command(0x22) #Display Update Control
-        self.send_data(0xF7)
-        self.send_command(0x20) #Activate Display Update Sequence
-        self.ReadBusy()
-
-    def TurnOnDisplay_Base(self):
-        self.send_command(0x22) #Display Update Control
-        self.send_data(0xF4)
-        self.send_command(0x20) #Activate Display Update Sequence
-        self.ReadBusy()
-        
-    def TurnOnDisplay_Fast(self):
-        self.send_command(0x22) #Display Update Control
-        self.send_data(0xC7)
-        self.send_command(0x20) #Activate Display Update Sequence
-        self.ReadBusy()
-        
-    def TurnOnDisplay_Partial(self):
-        self.send_command(0x22) #Display Update Control
-        self.send_data(0x1C)
-        self.send_command(0x20) #Activate Display Update Sequence
-        self.ReadBusy()
-
+    def _data(self, data):
+        self.dc(1)
+        self.cs(0)
+        self.spi.write(data)
+        self.cs(1)
 
     def init(self):
-        # EPD hardware init start
         self.reset()
+        print(f"Initial BUSY pin state: {self.busy.value()}")
+        self._command(BOOSTER_SOFT_START, b'\x17\x17\x17') # 07 0f 17 1f 27 2F 37 2f
+        self._command(POWER_ON)
+        print("Waiting for display after POWER_ON command...")
+        self.wait_until_idle()
+        print(f"BUSY pin state after wait: {self.busy.value()}")
+        self._command(PANEL_SETTING, b'\x0F') # LUT from OTP
 
-        self.ReadBusy()   
-        self.send_command(0x12)  #SWRESET
-        self.ReadBusy()   
-
-        self.send_command(0x01) #Driver output control      
-        self.send_data((self.height-1)%256)    
-        self.send_data((self.height-1)//256)
-        self.send_data(0x00)
-
-        self.send_command(0x11) #data entry mode       
-        self.send_data(0x03)  # Portrait mode (hardware native)
-
-        self.send_command(0x44) #set Ram-X address start/end position   
-        self.send_data(0x00)
-        self.send_data(self.width//8-1)   
-
-        self.send_command(0x45) #set Ram-Y address start/end position          
-        self.send_data(0x00)
-        self.send_data(0x00) 
-        self.send_data((self.height-1)%256)    
-        self.send_data((self.height-1)//256)
-
-        self.send_command(0x3C) #BorderWavefrom
-        self.send_data(0x05)	
-
-        self.send_command(0x21) #  Display update control
-        self.send_data(0x00)		
-        self.send_data(0x80)	
-
-        self.send_command(0x18) #Read built-in temperature sensor
-        self.send_data(0x80)	
-
-        self.send_command(0x4E)   # set RAM x address count to 0
-        self.send_data(0x00)
-        self.send_command(0x4F)   # set RAM y address count to 0X199    
-        self.send_data(0x00)    
-        self.send_data(0x00)
-        self.ReadBusy()
-        
-        return 0
-    
-    def init_Fast(self):
-        # EPD hardware init start
-        self.reset()
-
-        self.ReadBusy()   
-        self.send_command(0x12)  #SWRESET
-        self.ReadBusy()   	
-
-        self.send_command(0x18) #Read built-in temperature sensor
-        self.send_data(0x80)
-
-        self.send_command(0x22) # Load temperature value
-        self.send_data(0xB1)		
-        self.send_command(0x20)	
-        self.ReadBusy()   
-
-        self.send_command(0x1A) # Write to temperature register
-        self.send_data(0x5a)		# 90		
-        self.send_data(0x00)	
-                    
-        self.send_command(0x22) # Load temperature value
-        self.send_data(0x91)		
-        self.send_command(0x20)	
-        self.ReadBusy()  
-
-        self.send_command(0x01) #Driver output control      
-        self.send_data((self.height-1)%256)    
-        self.send_data((self.height-1)//256)
-        self.send_data(0x00)
-
-        self.send_command(0x11) #data entry mode       
-        self.send_data(0x03)  # Portrait mode (hardware native)
-
-        self.send_command(0x44) #set Ram-X address start/end position   
-        self.send_data(0x00)
-        self.send_data(self.width//8-1)   
-
-        self.send_command(0x45) #set Ram-Y address start/end position          
-        self.send_data(0x00)
-        self.send_data(0x00) 
-        self.send_data((self.height-1)%256)    
-        self.send_data((self.height-1)//256)	
-
-        self.send_command(0x4E)   # set RAM x address count to 0
-        self.send_data(0x00)
-        self.send_command(0x4F)   # set RAM y address count to 0X199    
-        self.send_data(0x00)    
-        self.send_data(0x00)
-        self.ReadBusy()	
-        
-        return 0
-    
-    def display(self): # ryimage: red or yellow image
-        self.send_command(0x24)
-        self.send_data1(self.buffer_balck)
-
-        self.send_command(0x26)
-        self.send_data1(self.buffer_red)
-
-        self.TurnOnDisplay()
-
-    def display_Fast(self): # ryimage: red or yellow image
-        self.send_command(0x24)
-        self.send_data1(self.buffer_balck)
-
-        self.send_command(0x26)
-        self.send_data1(self.buffer_red)
-
-        self.TurnOnDisplay_Fast()
-
-    def Clear(self):
-        self.send_command(0x24)
-        self.send_data1([0xFF] * self.height * int(self.width / 8))
-        
-        self.send_command(0x26)
-        self.send_data1([0x00] * self.height * int(self.width / 8))
-                                
-        self.TurnOnDisplay()
-
-    def clear(self):
-        """Clear both buffers (white background, no red)"""
-        self.imageblack.fill(0xff)  # White background
-        self.imagered.fill(0x00)    # No red
-    
-    def _rotate_coords(self, x, y):
-        """Convert logical landscape coordinates to physical portrait coordinates"""
-        # Rotate 90 degrees counterclockwise: (x,y) -> (y, width-1-x)
-        physical_x = y
-        physical_y = self.logical_width - 1 - x
-        return physical_x, physical_y
-    
-    def text(self, string, x, y, color='black'):
-        """Draw text in landscape orientation"""
-        buffer = self.imageblack if color == 'black' else self.imagered
-        pixel_color = 0x00 if color == 'black' else 0xff
-        
-        # For now, draw text rotated character by character
-        # This is a simple approach - for better results you'd need font rotation
-        char_width = 8
-        char_height = 8
-        
-        for i, char in enumerate(string):
-            char_x = x + i * char_width
-            if char_x >= self.logical_width:
+    def wait_until_idle(self, timeout_ms=10000):
+        """Wait for display to become idle with timeout to prevent infinite loops"""
+        start_time = 0
+        while self.busy.value() == BUSY:
+            sleep_ms(100)
+            start_time += 100
+            if start_time >= timeout_ms:
+                print(f"Warning: Display busy timeout after {timeout_ms}ms")
                 break
-                
-            # Draw each character pixel by pixel (rotated)
-            # For simplicity, let's use the original text method on rotated coords
-            # Note: This will make text appear rotated, but readable in landscape
-            px, py = self._rotate_coords(char_x, y)
-            if 0 <= px < self.width and 0 <= py < self.height:
-                # Use a simple approach: draw the character normally but in rotated position
-                buffer.text(char, px - 4, py - 4, pixel_color)
 
-    def draw_crosshair(self, x, y, size=6, color='black'):
-        """Draw a crosshair at the specified position (using logical landscape coordinates)"""
-        buffer = self.imageblack if color == 'black' else self.imagered
-        pixel_color = 0x00 if color == 'black' else 0xff
-        
-        # Ensure coordinates are within logical bounds
-        x = max(size, min(self.logical_width - size - 1, x))
-        y = max(size, min(self.logical_height - size - 1, y))
-        
-        # Simplified crosshair - just draw the essential parts for speed
-        # Center point
-        px, py = self._rotate_coords(x, y)
-        if 0 <= px < self.width and 0 <= py < self.height:
-            buffer.pixel(px, py, pixel_color)
-        
-        # Horizontal line (reduced size for speed)
-        for i in range(-size//2, size//2 + 1, 2):  # Step by 2 for speed
-            px, py = self._rotate_coords(x + i, y)
-            if 0 <= px < self.width and 0 <= py < self.height:
-                buffer.pixel(px, py, pixel_color)
-        
-        # Vertical line (reduced size for speed)
-        for i in range(-size//2, size//2 + 1, 2):  # Step by 2 for speed
-            px, py = self._rotate_coords(x, y + i)
-            if 0 <= px < self.width and 0 <= py < self.height:
-                buffer.pixel(px, py, pixel_color)
+    def reset(self):
+        self.rst(0)
+        sleep_ms(200)
+        self.rst(1)
+        sleep_ms(200)
 
-    def clear_crosshair_area(self, x, y, size=6):
-        """Clear the area where a crosshair was drawn"""
-        # Clear both buffers in the crosshair area
-        for dx in range(-size//2-1, size//2+2):
-            for dy in range(-size//2-1, size//2+2):
-                px, py = self._rotate_coords(x + dx, y + dy)
-                if 0 <= px < self.width and 0 <= py < self.height:
-                    self.imageblack.pixel(px, py, 0xff)  # White
-                    self.imagered.pixel(px, py, 0x00)    # No red
+    # draw the current frame memory
+    def display_frame(self, frame_buffer_black, frame_buffer_red=None):
+        """Display frame buffer(s) on the e-paper display
+        
+        Args:
+            frame_buffer_black: Black/white frame buffer (required)
+            frame_buffer_red: Red frame buffer (optional, defaults to None)
+        """
+        if (frame_buffer_black != None):
+            self._command(DATA_START_TRANSMISSION_1)
+            sleep_ms(2)
+            for i in range(0, self.width * self.height // 8):
+                self._data(bytearray([frame_buffer_black[i]]))
+            sleep_ms(2)
+        if (frame_buffer_red != None):
+            self._command(DATA_START_TRANSMISSION_2)
+            sleep_ms(2)
+            for i in range(0, self.width * self.height // 8):
+                self._data(bytearray([frame_buffer_red[i]]))
+            sleep_ms(2)
 
-    def update_crosshair_partial(self, old_x, old_y, new_x, new_y, size=6, color='black'):
-        """Update crosshair position using partial display updates"""
-        margin = 5
-        
-        if old_x >= 0 and old_y >= 0:  # Clear old position if valid
-            # Calculate physical coordinates for old position
-            old_px, old_py = self._rotate_coords(old_x, old_y)
-            
-            # Clear old crosshair area
-            self.clear_crosshair_area(old_x, old_y, size)
-            
-            # Partial update for old area (clear it)
-            x_start = max(0, old_px - size - margin)
-            x_end = min(self.width - 1, old_px + size + margin)
-            y_start = max(0, old_py - size - margin)
-            y_end = min(self.height - 1, old_py + size + margin)
-            
-            self._partial_update_area(x_start, y_start, x_end, y_end)
-        
-        # Draw new crosshair
-        self.draw_crosshair(new_x, new_y, size, color)
-        
-        # Calculate physical coordinates for new position
-        new_px, new_py = self._rotate_coords(new_x, new_y)
-        
-        # Partial update for new area
-        x_start = max(0, new_px - size - margin)
-        x_end = min(self.width - 1, new_px + size + margin)
-        y_start = max(0, new_py - size - margin) 
-        y_end = min(self.height - 1, new_py + size + margin)
-        
-        self._partial_update_area(x_start, y_start, x_end, y_end)
+        self._command(DISPLAY_REFRESH)
+        self.wait_until_idle()
 
-    def _partial_update_area(self, x_start, y_start, x_end, y_end):
-        """Perform a partial update on a specific area of the display"""
-        # Ensure coordinates are byte-aligned for the display
-        x_start_byte = x_start // 8
-        x_end_byte = (x_end + 7) // 8
-        
-        # Set up partial update window
-        self.send_command(0x44)  # Set RAM X start/end
-        self.send_data(x_start_byte & 0xff)
-        self.send_data((x_end_byte - 1) & 0xff)
-        
-        self.send_command(0x45)  # Set RAM Y start/end  
-        self.send_data(y_start & 0xff)
-        self.send_data((y_start >> 8) & 0x01)
-        self.send_data(y_end & 0xff)
-        self.send_data((y_end >> 8) & 0x01)
-        
-        self.send_command(0x4E)  # Set RAM X counter
-        self.send_data(x_start_byte & 0xff)
-        self.send_command(0x4F)  # Set RAM Y counter
-        self.send_data(y_start & 0xff)
-        self.send_data((y_start >> 8) & 0x01)
-        
-        # Send partial image data
-        self.send_command(0x24)  # Write black data
-        for y in range(y_start, y_end + 1):
-            for x_byte in range(x_start_byte, x_end_byte):
-                if x_byte < len(self.buffer_balck) // self.height:
-                    idx = y * (self.width // 8) + x_byte
-                    if idx < len(self.buffer_balck):
-                        self.send_data(self.buffer_balck[idx])
-        
-        self.send_command(0x26)  # Write red data
-        for y in range(y_start, y_end + 1):
-            for x_byte in range(x_start_byte, x_end_byte):
-                if x_byte < len(self.buffer_red) // self.height:
-                    idx = y * (self.width // 8) + x_byte
-                    if idx < len(self.buffer_red):
-                        self.send_data(self.buffer_red[idx])
-        
-        # Trigger partial update
-        self.TurnOnDisplay_Partial()
-
-    def display_partial(self, Image, Xstart, Ystart, Xend, Yend):
-        if((Xstart % 8 + Xend % 8 == 8 & Xstart % 8 > Xend % 8) | Xstart % 8 + Xend % 8 == 0 | (Xend - Xstart)%8 == 0):
-            Xstart = Xstart // 8
-            Xend = Xend // 8
-        else:
-            Xstart = Xstart // 8 
-            if Xend % 8 == 0:
-                Xend = Xend // 8
-            else:
-                Xend = Xend // 8 + 1
-                
-        if(self.width % 8 == 0):
-            Width = self.width // 8
-        else:
-            Width = self.width // 8 +1
-        Height = self.height
-
-        Xend -= 1
-        Yend -= 1
-	
-        self.send_command(0x44)       # set RAM x address start/end, in page 35
-        self.send_data(Xstart & 0xff)    # RAM x address start at 00h
-        self.send_data(Xend & 0xff)    # RAM x address end at 0fh(15+1)*8->128 
-        self.send_command(0x45)       # set RAM y address start/end, in page 35
-        self.send_data(Ystart & 0xff)    # RAM y address start at 0127h
-        self.send_data((Ystart>>8) & 0x01)    # RAM y address start at 0127h
-        self.send_data(Yend & 0xff)    # RAM y address end at 00h
-        self.send_data((Yend>>8) & 0x01)   
-
-        self.send_command(0x4E)   # set RAM x address count to 0
-        self.send_data(Xstart & 0xff)
-        self.send_command(0x4F)   # set RAM y address count to 0X127    
-        self.send_data(Ystart & 0xff)
-        self.send_data((Ystart>>8) & 0x01)
-
-        self.send_command(0x24)   #Write Black and White image to RAM
-        for j in range(Height):
-            for i in range(Width):
-                if((j > Ystart-1) & (j < (Yend + 1)) & (i > Xstart-1) & (i < (Xend + 1))):
-                    self.send_data(Image[i + j * Width])
-        self.TurnOnDisplay_Partial()
-
+    # to wake call reset() or init()
     def sleep(self):
-        self.send_command(0x10) 
-        self.send_data(0x01)
-        
-        self.delay_ms(2000)
-        self.module_exit() 
+        self._command(VCOM_AND_DATA_INTERVAL_SETTING, b'\xF7') # border floating
+        self._command(POWER_OFF)
+        self.wait_until_idle()
+        self._command(DEEP_SLEEP, b'\xA5') # check code
