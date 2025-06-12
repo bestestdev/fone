@@ -211,4 +211,28 @@ The 4.2" tri-color e-paper display provides the main user interface with red/whi
 - **BUSY Pin**: Monitor this pin to know when display update is complete
 - **Reset Control**: Hardware reset via RST pin for reliable initialization
 
+### MicroSD Card Module
+
+The microSD card provides storage for contacts, messages, and system data, connected via SPI interface.
+
+**SD Card Module Connections:**
+
+| SD Card Pin | Description | Connection | Notes |
+|-------------|-------------|------------|-------|
+| **VCC** | Power | **3V3** (Pin 36) | 3.3V power supply |
+| **GND** | Ground | **GND** (Pin 38) | Common ground |
+| **MISO** | SPI Data Out | **GP8** (Pin 11) | SPI1 MISO (RX) |
+| **MOSI** | SPI Data In | **GP11** (Pin 15) | SPI1 MOSI (TX) - **Shared with display** |
+| **SCK** | SPI Clock | **GP10** (Pin 14) | SPI1 SCK - **Shared with display** |
+| **CS** | Chip Select | **GP7** (Pin 10) | SPI chip select (active low) |
+
+#### Key Points:
+- **Shared SPI Bus**: Uses SPI1 shared with the e-paper display (CLK, MOSI pins)
+- **Separate MISO**: SD card has its own MISO line (GP8) since display is write-only
+- **Unique CS**: Each device has its own chip select (SD: GP7, Display: GP9)
+- **Power**: 3.3V operation for SD card compatibility
+- **File System**: Uses FAT32 format for maximum compatibility
+- **Storage**: Supports up to 32GB microSD cards
+- **Bus Arbitration**: Software controls which device is active via CS pins
+
 *[Development in progress - setup instructions coming soon]*
