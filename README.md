@@ -221,11 +221,9 @@ The 4.2" tri-color e-paper display provides the main user interface with red/whi
 | **DC** | Data/Command | **GP12** (Pin 16) | Command mode control |
 | **RST** | Reset | **GP13** (Pin 17) | Hardware reset (active low) |
 | **BUSY** | Busy Status | **GP14** (Pin 19) | Display busy indicator |
-| **PWR** | Power Control | **GP15** (Pin 20) | Display power control |
 
 #### Key Points:
 - **SPI Interface**: Uses SPI1 on Pico 2 for high-speed communication
-- **Power Management**: Separate PWR pin allows complete display shutdown for battery saving
 - **Tri-Color Support**: Red/white/black output with partial refresh capability
 - **Resolution**: 400x300 pixels provides clear text and simple graphics
 - **Update Time**: ~2-15 seconds for full refresh, <1 second for partial updates

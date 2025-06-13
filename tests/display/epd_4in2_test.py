@@ -1,125 +1,32 @@
 import sys
 sys.path.insert(0, '../../hw')
-from epd import EPD  # type: ignore
+from epd import EPD_4in2_B  # type: ignore
 
-"""
-	Example for 4.2 inch black & white Waveshare E-ink screen
-	Run on ESP32
-"""
+if __name__ == "__main__":
+    epd = EPD_4in2_B()
+    
+    epd.imageblack.fill(0xff)
+    epd.imagered.fill(0xff)
+    
+    epd.imageblack.text("Waveshare", 5, 10, 0x00)
+    epd.imagered.text("Pico_ePaper-4.2-B", 5, 40, 0x00)
+    epd.imageblack.text("Raspberry Pico", 5, 70, 0x00)
+    epd.EPD_4IN2B_Display(epd.buffer_black,epd.buffer_red)
+    epd.delay_ms(5000)
+    
+    epd.imageblack.vline(10, 90, 60, 0x00)
+    epd.imagered.vline(90, 90, 60, 0x00)
+    epd.imageblack.hline(10, 90, 80, 0x00)
+    epd.imagered.hline(10, 150, 80, 0x00)
+    epd.imageblack.line(10, 90, 90, 150, 0x00)
+    epd.imagered.line(90, 90, 10, 150, 0x00)
+    epd.EPD_4IN2B_Display(epd.buffer_black,epd.buffer_red)
+    epd.delay_ms(5000)
+    
+    epd.imageblack.rect(10, 180, 50, 80, 0x00)
+    epd.imagered.fill_rect(70, 180, 50, 80, 0x00)
+    epd.EPD_4IN2B_Display(epd.buffer_black,epd.buffer_red)
+    epd.delay_ms(5000)
 
-print('Initializing EPD')
-
-e = EPD()
-print('EPD object created')
-e.init()
-print('EPD initialized')
-
-w = 400
-h = 300
-x = 0
-y = 0
-
-# --------------------
-
-# use a frame buffer
-# 400 * 300 / 8 = 15000 - thats a lot of pixels
-import framebuf
-buf = bytearray(w * h // 8)
-fb = framebuf.FrameBuffer(buf, w, h, framebuf.MONO_HLSB)
-black = 0
-white = 1
-fb.fill(white)
-
-# --------------------
-
-# write hello world with black bg and white text
-from image_dark import hello_world_dark
-from image_light import hello_world_light
-print('Image dark')
-bufImage = hello_world_dark
-fbImage = framebuf.FrameBuffer(bufImage, 128, 296, framebuf.MONO_HLSB)
-fb.blit(fbImage, 20, 2)
-bufImage = hello_world_light
-fbImage = framebuf.FrameBuffer(bufImage, 128, 296, framebuf.MONO_HLSB)
-fb.blit(fbImage, 168, 2)
-e.display_frame(buf)
-
-# --------------------
-
-# write hello world with white bg and black text
-print('Image light')
-#e.display_frame(hello_world_light)
-
-# --------------------
-
-
-print('Frame buffer things')
-fb.fill(white)
-fb.text('Hello World',30,0,black)
-fb.pixel(30, 10, black)
-fb.hline(30, 30, 10, black)
-fb.vline(30, 50, 10, black)
-fb.line(30, 70, 40, 80, black)
-fb.rect(30, 90, 10, 10, black)
-fb.fill_rect(30, 110, 10, 10, black)
-for row in range(0,36):
-	fb.text(str(row),0,row*8,black)
-fb.text('Line 36',0,288,black)
-e.display_frame(buf)
-
-# --------------------
-
-# wrap text inside a box
-black = 0
-white = 1
-# clear
-fb.fill(white)
-# display as much as this as fits in the box
-str = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam vel neque in elit tristique vulputate at et dui. Maecenas nec felis lectus. Pellentesque sit amet facilisis dui. Maecenas ac arcu euismod, tempor massa quis, ultricies est.'
-
-# this could be useful as a new method in FrameBuffer
-def text_wrap(str,x,y,color,w,h,border=None):
-	# optional box border
-	if border is not None:
-		fb.rect(x, y, w, h, border)
-	cols = w // 8
-	# for each row
-	j = 0
-	for i in range(0, len(str), cols):
-		# draw as many chars fit on the line
-		fb.text(str[i:i+cols], x, y + j, color)
-		j += 8
-		# dont overflow text outside the box
-		if j >= h:
-			break
-
-# clear
-fb.fill(white)
-
-# draw text box 1
-# box position and dimensions
-print('Box 1')
-bx = 8
-by = 8
-bw = 112 #  = 14 cols
-bh = 112 #  = 14 rows (196 chars in total)
-text_wrap(str,bx,by,black,bw,bh,black)
-e.display_frame(buf)
-
-# draw text box 2
-print('Box 2 & 3')
-bx = 0
-by = 128
-bw = w # 128 = 16 cols
-bh = 6 * 8 # 48 = 6 rows (96 chars in total)
-text_wrap(str,bx,by,black,bw,bh,black)
-
-# draw text box 3
-bx = 0
-by = 184
-bw = w//2 # 64 = 8 cols
-bh = 8 * 8 # 64 = 8 rows (64 chars in total)
-text_wrap(str,bx,by,black,bw,bh,None)
-e.display_frame(buf)
-
-# --------------------
+    epd.EPD_4IN2B_Clear()
+    epd.Sleep()
