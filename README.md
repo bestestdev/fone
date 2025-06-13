@@ -10,8 +10,7 @@ A modern take on the classic Nokia cell phone experience, built with a Raspberry
 
 ### Core Processing
 - **Raspberry Pi Pico 2** - Main microcontroller running MicroPython
-- **32GB microSD card** - Storage for contacts, messages, and system data
-- **microSD SDHC adapter** - Interface for storage expansion
+- **W25Q128 SPI Flash** - 16MB flash storage for contacts, messages, and system data
 
 ### Cellular Communication
 - **SIM7600G Module** - 4G/LTE cellular connectivity with GPS
@@ -58,7 +57,7 @@ A modern take on the classic Nokia cell phone experience, built with a Raspberry
 ### Connectivity
 - **Cellular**: 4G LTE via SIM7600G
 - **GPS (Stretch Goal)**: Built-in GNSS receiver
-- **Storage**: MicroSD card support up to 32GB
+- **Storage**: 16MB SPI flash memory (W25Q128)
 
 ### Power
 - **Battery Life**: All-day usage with 3700mAh capacity
@@ -211,28 +210,28 @@ The 4.2" tri-color e-paper display provides the main user interface with red/whi
 - **BUSY Pin**: Monitor this pin to know when display update is complete
 - **Reset Control**: Hardware reset via RST pin for reliable initialization
 
-### MicroSD Card Module
+### W25Q128 SPI Flash Memory Module
 
-The microSD card provides storage for contacts, messages, and system data, connected via SPI interface.
+The W25Q128 provides 16MB (128Mbit) of non-volatile storage for contacts, messages, and system data, connected via SPI interface. This flash memory offers faster access times and lower power consumption compared to SD cards.
 
-**SD Card Module Connections:**
+**W25Q128 Module Connections:**
 
-| SD Card Pin | Description | Connection | Notes |
+| W25Q128 Pin | Description | Connection | Notes |
 |-------------|-------------|------------|-------|
 | **VCC** | Power | **3V3** (Pin 36) | 3.3V power supply |
 | **GND** | Ground | **GND** (Pin 38) | Common ground |
-| **MISO** | SPI Data Out | **GP8** (Pin 11) | SPI1 MISO (RX) |
-| **MOSI** | SPI Data In | **GP11** (Pin 15) | SPI1 MOSI (TX) - **Shared with display** |
-| **SCK** | SPI Clock | **GP10** (Pin 14) | SPI1 SCK - **Shared with display** |
+| **DC** | SPI Data Out (MISO) | **GP8** (Pin 11) | SPI1 MISO (RX) |
+| **D1** | SPI Data In (MOSI) | **GP11** (Pin 15) | SPI1 MOSI (TX) - **Shared with display** |
+| **SLK** | SPI Clock | **GP10** (Pin 14) | SPI1 SCK - **Shared with display** |
 | **CS** | Chip Select | **GP7** (Pin 10) | SPI chip select (active low) |
 
 #### Key Points:
-- **Shared SPI Bus**: Uses SPI1 shared with the e-paper display (CLK, MOSI pins)
-- **Separate MISO**: SD card has its own MISO line (GP8) since display is write-only
-- **Unique CS**: Each device has its own chip select (SD: GP7, Display: GP9)
-- **Power**: 3.3V operation for SD card compatibility
-- **File System**: Uses FAT32 format for maximum compatibility
-- **Storage**: Supports up to 32GB microSD cards
-- **Bus Arbitration**: Software controls which device is active via CS pins
+- **Shared SPI Bus**: Uses SPI1 shared with the e-paper display (SLK, D0 pins)
+- **Separate MISO**: Flash memory has its own MISO line (D1/GP8) since display is write-only
+- **Unique CS**: Each device has its own chip select (Flash: GP7, Display: GP9)
+- **Power**: 3.3V operation, low power consumption (4mA active, <1µA standby)
+- **Storage**: 16MB of flash memory with 100,000+ erase/program cycles
+- **Performance**: Up to 104MHz SPI clock, much faster than SD card access
+- **File System**: Can use LittleFS or FAT filesystem via MicroPython's VFS
 
 *[Development in progress - setup instructions coming soon]*
