@@ -255,4 +255,52 @@ The W25Q128 provides 16MB (128Mbit) of non-volatile storage for contacts, messag
 - **Performance**: Up to 104MHz SPI clock, much faster than SD card access
 - **File System**: Can use LittleFS or FAT filesystem via MicroPython's VFS
 
+### MAX98357A I2S Amplifier and Speaker
+
+The MAX98357A is a digital I2S audio amplifier used to drive the speaker for calls, notifications, and other audio feedback.
+
+**MAX98357A Module Connections:**
+
+| MAX98357A Pin | Description | Connection | Notes |
+|---------------|-------------|------------|-------|
+| **Vin** | Power In | **5V** (Pin 40 - VBUS) | 3-5.5V input range |
+| **GND** | Ground | **GND** (Pin 38) | Common ground |
+| **DIN** | Data In | **GP20** (Pin 26) | I2S Serial Data |
+| **BCLK** | Bit Clock | **GP26** (Pin 31) | I2S Bit Clock |
+| **LRC** | Left-Right Clock | **GP27** (Pin 32) | I2S Word Select |
+| **SD** | Shutdown | **GP21** (Pin 27) | Active-low shutdown control |
+| **GAIN** | Gain Select | *(unconnected)* | Default 9dB gain. Connect to GND for 3dB, VCC for 15dB. |
+
+**Speaker Connection:**
+
+| Component | Connection |
+|-----------|------------|
+| **Speaker +** | **MAX98357A Left/Right +** |
+| **Speaker -** | **MAX98357A Left/Right -** |
+
+#### Key Points:
+- **I2S Audio**: Digital audio provides clear, noise-free sound.
+- **Power**: Connected to 5V for maximum speaker volume.
+- **Shutdown Pin**: GP21 controls the amplifier's shutdown mode to conserve power.
+- **Mono Output**: Although the module has L/R outputs, it's a mono amplifier. Connect speaker to either pair.
+- **Gain Control**: The `GAIN` pin can be used to adjust the amplification level if needed. Default (unconnected) is 9dB.
+
+### GY-MAX4466 Electret Microphone
+
+The GY-MAX4466 microphone module with automatic gain control (AGC) is used for voice input. It's connected directly to one of the Pico's ADC pins.
+
+**Microphone Module Connections:**
+
+| Microphone Pin | Description | Connection | Notes |
+|----------------|-------------|------------|-------|
+| **VCC** | Power | **3V3** (Pin 36) | 2.4-5.5V input range |
+| **GND** | Ground | **GND** (Pin 38) | Common ground |
+| **OUT** | Analog Out | **GP28** (Pin 34) | Connects to ADC2 |
+
+#### Key Points:
+- **Direct ADC Connection**: Simplifies wiring and reduces component count.
+- **Analog Pin**: Uses `GP28`, one of the Pico's three dedicated ADC pins.
+- **Power**: Runs on 3.3V power provided by the Pico.
+- **AGC**: The MAX4466's automatic gain control adjusts for varying sound levels.
+
 *[Development in progress - setup instructions coming soon]*
