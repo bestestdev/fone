@@ -220,7 +220,7 @@ The 4.2" tri-color e-paper display provides the main user interface with red/whi
 | **CS** | Chip Select | **GP9** (Pin 12) | SPI chip select (active low) |
 | **DC** | Data/Command | **GP12** (Pin 16) | Command mode control |
 | **RST** | Reset | **GP13** (Pin 17) | Hardware reset (active low) |
-| **BUSY** | Busy Status | **GP14** (Pin 19) | Display busy indicator |
+| **BUSY** | Busy Status | **GP27** (Pin 32) | Display busy indicator |
 
 #### Key Points:
 - **SPI Interface**: Uses SPI1 on Pico 2 for high-speed communication
@@ -266,8 +266,8 @@ The MAX98357A is a digital I2S audio amplifier used to drive the speaker for cal
 | **Vin** | Power In | **5V** (Pin 40 - VBUS) | 3-5.5V input range |
 | **GND** | Ground | **GND** (Pin 38) | Common ground |
 | **DIN** | Data In | **GP20** (Pin 26) | I2S Serial Data |
-| **BCLK** | Bit Clock | **GP15** (Pin 20) | I2S Bit Clock |
-| **LRC** | Left-Right Clock | **GP27** (Pin 32) | I2S Word Select |
+| **BCLK** | Bit Clock | **GP14** (Pin 19) | I2S Bit Clock |
+| **LRC** | Left-Right Clock | **GP15** (Pin 20) | I2S Word Select |
 | **SD** | Shutdown | **GP21** (Pin 27) | Active-low shutdown control |
 | **GAIN** | Gain Select | *(unconnected)* | Default 9dB gain. Connect to GND for 3dB, VCC for 15dB. |
 

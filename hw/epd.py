@@ -41,7 +41,7 @@ SPI_MOSI = Pin(11)   # SPI1 MOSI - GP11 (Pin 15)
 SPI_CS = Pin(9)      # Chip Select - GP9 (Pin 12)
 SPI_DC = Pin(12)     # Data/Command - GP12 (Pin 16)
 SPI_RST = Pin(13)    # Reset - GP13 (Pin 17)
-SPI_BUSY = Pin(14)   # Busy status - GP14 (Pin 19)
+SPI_BUSY = Pin(27)   # Busy status - GP27 (Pin 32)
 
 
 class EPD_4in2_B:
