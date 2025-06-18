@@ -266,7 +266,7 @@ The MAX98357A is a digital I2S audio amplifier used to drive the speaker for cal
 | **Vin** | Power In | **5V** (Pin 40 - VBUS) | 3-5.5V input range |
 | **GND** | Ground | **GND** (Pin 38) | Common ground |
 | **DIN** | Data In | **GP20** (Pin 26) | I2S Serial Data |
-| **BCLK** | Bit Clock | **GP26** (Pin 31) | I2S Bit Clock |
+| **BCLK** | Bit Clock | **GP15** (Pin 20) | I2S Bit Clock |
 | **LRC** | Left-Right Clock | **GP27** (Pin 32) | I2S Word Select |
 | **SD** | Shutdown | **GP21** (Pin 27) | Active-low shutdown control |
 | **GAIN** | Gain Select | *(unconnected)* | Default 9dB gain. Connect to GND for 3dB, VCC for 15dB. |
@@ -302,5 +302,30 @@ The GY-MAX4466 microphone module with automatic gain control (AGC) is used for v
 - **Analog Pin**: Uses `GP28`, one of the Pico's three dedicated ADC pins.
 - **Power**: Runs on 3.3V power provided by the Pico.
 - **AGC**: The MAX4466's automatic gain control adjusts for varying sound levels.
+
+### Battery Level Monitoring
+
+To monitor the battery level, a voltage divider is used to scale the battery's voltage (3.0V-4.2V) down to a range the Pico's ADC can safely read (0-3.3V). The reading is taken on the now-available ADC pin.
+
+**Voltage Divider Circuit:**
+
+| Component | Connection | Notes |
+|-----------|----------------------------------|---------------------------------------|
+| **Battery +** | Resistor 1 (R1) - e.g., 100kΩ | Connects to the positive battery terminal |
+| **R1 + R2** | **GP26** (Pin 31) & Resistor 2 (R2) | Center point connects to Pico's ADC pin |
+| **R2** | **GND** (Pin 38) | Connects to ground |
+
+*A 1:1 ratio (e.g., two 100kΩ resistors) is simple and effective.*
+
+**Pin Connection:**
+
+| Description | Connection | Notes |
+|-------------------|------------|----------------------------|
+| **Voltage Sense** | **GP26** (Pin 31) | ADC capable pin (ADC0) |
+
+#### Key Points:
+- **Voltage Divider**: Essential to prevent damage to the Pico's ADC.
+- **Resistor Choice**: Using identical resistors (e.g., 100kΩ) creates a simple 1:2 divider. The actual voltage is `2 * adc_voltage`.
+- **ADC Reading**: The software must read the analog value from `GP26` and multiply it by the divider ratio to calculate the true battery voltage.
 
 *[Development in progress - setup instructions coming soon]*

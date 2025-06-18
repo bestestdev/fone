@@ -8,7 +8,7 @@ def test_max98357a_speaker():
     """Test MAX98357A I2S Amplifier and Speaker"""
 
     # Pin definitions
-    I2S_BCLK_PIN = 26  # I2S Bit Clock (BCLK)
+    I2S_BCLK_PIN = 15  # I2S Bit Clock (BCLK)
     I2S_LRC_PIN = 27   # I2S Left/Right Clock (LRC/WS)
     I2S_DIN_PIN = 20   # I2S Data In (DIN)
     AMP_SD_PIN = 21    # Amplifier Shutdown pin (active-low)

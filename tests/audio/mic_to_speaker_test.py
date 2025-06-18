@@ -11,7 +11,7 @@ def test_mic_to_speaker():
     # Pins based on README.md
     MIC_ADC_PIN = 28
     AMP_SD_PIN = 21
-    I2S_BCLK_PIN = 26
+    I2S_BCLK_PIN = 15
     I2S_LRC_PIN = 27
     I2S_DIN_PIN = 20
     
