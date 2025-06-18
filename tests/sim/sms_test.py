@@ -122,6 +122,72 @@ def set_sms_text_mode():
         print("Failed to set SMS text mode")
         return False
 
+def list_sms_messages():
+    """Lists all SMS messages stored on the SIM."""
+    print("\n=== Listing all SMS messages ===")
+    response = send_at_command('AT+CMGL="ALL"', timeout=10)
+    
+    if "+CMGL:" not in response and "OK" in response:
+        print("No SMS messages found on SIM.")
+        return True
+    
+    if "+CMGL:" in response:
+        print("\n--- All SMS Messages ---")
+        lines = response.strip().split('\r\n')
+        
+        i = 0
+        while i < len(lines):
+            line = lines[i]
+            if line.startswith("+CMGL:"):
+                header = line
+                # The message body is expected on the next line
+                if (i + 1) < len(lines):
+                    message_body = lines[i+1]
+                    # If the next line is another header or OK, this message has no body
+                    if message_body.startswith("+CMGL:") or message_body.strip() == "OK":
+                        message_body = "[Empty Body]"
+                        i -= 1 # Don't skip the next header line
+
+                    try:
+                        # Parse header: +CMGL: 1,"REC READ","+1234567890",,"24/05/21,10:00:00+00"
+                        parts = header.split(',')
+                        index = parts[0].split(':')[1].strip()
+                        status = parts[1].strip('"')
+                        sender = parts[2].strip('"')
+                        timestamp = ",".join(parts[4:]).strip('"')
+
+                        print(f"  Index: {index}, Status: {status}")
+                        print(f"  From: {sender}")
+                        print(f"  Date: {timestamp}")
+                        print(f"  Message: {message_body}")
+                        print("  --------------------")
+                    except Exception:
+                        print(f"Could not parse message: {header}")
+
+                    i += 2 # Move past header and body
+                else:
+                    i += 1 # End of lines
+            else:
+                i += 1 # Not a header, move to next line
+
+        print("--- End of Messages ---")
+        return True
+    
+    print("Failed to list SMS messages.")
+    return False
+
+def delete_all_sms_messages():
+    """Deletes all SMS messages from the SIM."""
+    print("\n=== Deleting all SMS messages ===")
+    response = send_at_command('AT+CMGDA="DEL ALL"', timeout=15)
+    
+    if "OK" in response:
+        print("Successfully deleted all SMS messages.")
+        return True
+    
+    print("Failed to delete SMS messages.")
+    return False
+
 # Send SMS message
 def send_sms(phone_number, message):
     print(f"\n=== Sending SMS to {phone_number} ===")
@@ -193,6 +259,31 @@ def run_sms_test(phone_number, message):
         print("=== SMS Test Failed ===")
         return False
 
+def run_read_sms_test():
+    """Main test function to check for and list SMS messages."""
+    print("=== Starting Read SMS Test ===")
+    
+    # Basic connectivity test
+    if not test_basic_at():
+        print("ERROR: Basic AT communication failed!")
+        return False
+
+    # Set SMS text mode
+    if not set_sms_text_mode():
+        print("ERROR: Failed to set SMS text mode!")
+        return False
+
+    # List all messages
+    if not list_sms_messages():
+        print("ERROR: Failed to list SMS messages!")
+        # We can still try to delete them
+    
+    # Deleting messages after reading
+    delete_all_sms_messages()
+
+    print("\n=== Read SMS Test Finished ===")
+    return True
+
 # Usage example
 if __name__ == "__main__":
     # Try to load environment variables from .env file
@@ -203,21 +294,14 @@ if __name__ == "__main__":
     print("Waiting for module to boot...")
     time.sleep(5)
     
-    # Get phone number from environment variable
+    # Run the read SMS test
+    run_read_sms_test()
+    
+    # Get phone number from environment variable to send a test message
     target_phone = getenv("TEST_PHONE_NUMBER")
     if not target_phone:
-        print("ERROR: TEST_PHONE_NUMBER environment variable not set!")
-        exit(1)
-    
-    test_message = "Hello from some random electronics on my desk!"
-    
-    print(f"Preparing to send SMS to: {target_phone}")
-    print(f"Message: {test_message}")
-    
-    # Run the SMS test
-    success = run_sms_test(target_phone, test_message)
-    
-    if success:
-        print("\n✅ SMS test completed successfully!")
+        print("\nSkipping send SMS test: TEST_PHONE_NUMBER not set.")
     else:
-        print("\n❌ SMS test failed!") 
+        test_message = "Hello from Fone!"
+        print(f"\nNow running send test to: {target_phone}")
+        run_sms_test(target_phone, test_message) 
