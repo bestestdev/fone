@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Do not attempt to run Micropython code. Ask the user to do it instead.
