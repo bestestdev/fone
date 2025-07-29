@@ -1,6 +1,6 @@
 import sys
 sys.path.insert(0, '../../hw')
-from epd import EPD_4in2_B  # type: ignore
+from epd import EPD_4in2_B # type: ignore
 
 def test_rotation(rotation_angle):
     """Test display with a specific rotation"""

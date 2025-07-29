@@ -28,7 +28,7 @@ A modern take on the classic Nokia cell phone experience, built with a Raspberry
 - **ADS1115 ADC** - High-resolution analog-to-digital conversion for microphone
 
 ### Display & Input
-- **4.2" E-Paper Display (FPC-190)** - red/white/black, 400x300 resolution, SPI interface, low power consumption
+- **2.42" OLED Display (SSD1309)** - monochrome, 128x64 resolution, SPI interface, low power consumption
 - **5-Way Digital Navigation Joystick** - Navigation, selection, and menu control
 - **3V Coin Vibration Motor** - Haptic feedback and notifications
 
@@ -65,7 +65,7 @@ A modern take on the classic Nokia cell phone experience, built with a Raspberry
 - **Standby**: Ultra-low power consumption with e-paper display
 
 ### Interface
-- **Display**: 2.9" monochrome e-paper (296x128px)
+- **Display**: 2.42" monochrome OLED (128x64px)
 - **Input**: 5-way digital joystick with SET/RST buttons
 - **Audio**: Full-duplex voice communication
 - **Feedback**: Vibration motor for alerts
@@ -205,9 +205,9 @@ The vibration motor provides haptic feedback for notifications and user interact
 - **Control**: PWM control via GP16 allows variable vibration intensity
 - **Frequency**: Typical vibration patterns: short bursts (100-300ms) for notifications
 
-### 4.2" E-Paper Display (FPC-190)
+### 2.42" OLED Display (SSD1309)
 
-The 4.2" tri-color e-paper display provides the main user interface with red/white/black output at 400x300 resolution using SPI communication.
+The 2.42" monochrome OLED display provides the main user interface with a 128x64 resolution using SPI communication.
 
 **Display Module Connections:**
 
@@ -220,16 +220,16 @@ The 4.2" tri-color e-paper display provides the main user interface with red/whi
 | **CS** | Chip Select | **GP9** (Pin 12) | SPI chip select (active low) |
 | **DC** | Data/Command | **GP12** (Pin 16) | Command mode control |
 | **RST** | Reset | **GP13** (Pin 17) | Hardware reset (active low) |
-| **BUSY** | Busy Status | **GP27** (Pin 32) | Display busy indicator |
 
 #### Key Points:
-- **SPI Interface**: Uses SPI1 on Pico 2 for high-speed communication
-- **Tri-Color Support**: Red/white/black output with partial refresh capability
-- **Resolution**: 400x300 pixels provides clear text and simple graphics
-- **Update Time**: ~2-15 seconds for full refresh, <1 second for partial updates
-- **Low Power**: Ultra-low power consumption when not updating (perfect for phone standby)
-- **BUSY Pin**: Monitor this pin to know when display update is complete
-- **Reset Control**: Hardware reset via RST pin for reliable initialization
+- **SPI Interface**: Uses SPI1 on Pico 2 for communication
+- **Monochrome Display**: Black and white output with high contrast
+- **Resolution**: 128x64 pixels provides clear text and simple graphics
+- **Fast Updates**: ~10ms refresh time for full screen updates
+- **Low Power**: Efficient power consumption (perfect for phone standby)
+- **Rotation Support**: Software rotation for portrait or landscape orientation
+- **Viewing Angle**: Wide viewing angle (>160°) for clear visibility
+- **Compact Size**: 2.42" diagonal with minimal bezel
 
 ### W25Q128 SPI Flash Memory Module
 
