@@ -1,0 +1,21 @@
+### Footprint positions - created on 2025-08-12T13:47:03-0700 ###
+### Printed by KiCad version 9.0.1
+## Unit = mm, Angle = deg.
+## Side : top
+# Ref     Val                     Package                                           PosX       PosY       Rot  Side
+A1        RaspberryPi_Pico        RaspberryPi_Pico_Common_Unspecified           132.0100   -93.2500    0.0000  top
+C1        0.1uf                   C_0805_2012Metric_Pad1.18x1.45mm_HandSolder   113.5000   -85.5000   90.0000  top
+C2        1uf                     C_0805_2012Metric_Pad1.18x1.45mm_HandSolder   147.2000   -79.9000    0.0000  top
+C3        0.1uf                   C_0805_2012Metric_Pad1.18x1.45mm_HandSolder   153.1000   -78.4000    0.0000  top
+J1        SIM7600G                JST_PH_B7B-PH-K_1x07_P2.00mm_Vertical         115.1650   -80.5125   90.0000  top
+J2        External_Battery_Board  JST_PH_B3B-PH-K_1x03_P2.00mm_Vertical         148.4000   -70.3000  -90.0000  top
+J3        2.42_OLED               JST_PH_B7B-PH-K_1x07_P2.00mm_Vertical         116.1650  -105.3125  -90.0000  top
+J4        Micrpohone_Module       JST_PH_B3B-PH-K_1x03_P2.00mm_Vertical         147.6000   -89.4000   90.0000  top
+J5        MAX98357A               JST_PH_B7B-PH-K_1x07_P2.00mm_Vertical         148.7000   -96.4000  -90.0000  top
+J6        Navigation_Module       JST_PH_B8B-PH-K_1x08_P2.00mm_Vertical         125.0000  -124.0500    0.0000  top
+R1        100k                    R_0805_2012Metric_Pad1.20x1.40mm_HandSolder   117.0650  -100.1125  -90.0000  top
+R2        100k                    R_0805_2012Metric_Pad1.20x1.40mm_HandSolder   117.6000   -85.6125  -90.0000  top
+R3        100k                    R_0805_2012Metric_Pad1.20x1.40mm_HandSolder   153.1000   -75.7000  180.0000  top
+R4        100k                    R_0805_2012Metric_Pad1.20x1.40mm_HandSolder   153.1000   -72.9000    0.0000  top
+U1        W25Q128JVS              SOIC-8_5.3x5.3mm_P1.27mm                      115.4650   -92.9125  -90.0000  top
+## End
