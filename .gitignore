@@ -44,3 +44,7 @@ fp-info-cache
 
 # Local project settings
 *.kicad_prl
+
+# OS generated files
+.DS_Store
+Thumbs.db
