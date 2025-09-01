@@ -11,16 +11,23 @@ SPI_CS = 9      # Chip Select - GP9 (Pin 12)
 SPI_DC = 12     # Data/Command - GP12 (Pin 16)
 SPI_RST = 13    # Reset - GP13 (Pin 17)
 
-# 5-Way Digital Navigation Joystick Pin Configuration
+# ANO Directional Navigation and Scroll Wheel Rotary Encoder Pin Configuration
 # COM pin is connected to GND. All pins are active low with internal pull-up.
-joystick_pins = {
-    'UP': Pin(18, Pin.IN, Pin.PULL_UP),
-    'DOWN': Pin(19, Pin.IN, Pin.PULL_UP),
-    'LEFT': Pin(4, Pin.IN, Pin.PULL_UP),
-    'RIGHT': Pin(5, Pin.IN, Pin.PULL_UP),
-    'MID': Pin(6, Pin.IN, Pin.PULL_UP),
-    'SET': Pin(17, Pin.IN, Pin.PULL_UP),
-    'RST': Pin(22, Pin.IN, Pin.PULL_UP),
+encoder_pins = {
+    'ENCA': Pin(17, Pin.IN, Pin.PULL_UP),   # Rotary encoder A pin
+    'ENCB': Pin(22, Pin.IN, Pin.PULL_UP),   # Rotary encoder B pin
+    'SW1': Pin(6, Pin.IN, Pin.PULL_UP),     # Center button
+    'SW2': Pin(5, Pin.IN, Pin.PULL_UP),     # Down button
+    'SW3': Pin(4, Pin.IN, Pin.PULL_UP),     # Right button  
+    'SW4': Pin(19, Pin.IN, Pin.PULL_UP),    # Up button
+    'SW5': Pin(18, Pin.IN, Pin.PULL_UP),    # Left button
+}
+
+# Rotary encoder state tracking
+encoder_state = {
+    'last_a': 1,
+    'last_b': 1,
+    'position': 0
 }
 
 class NavigationGrid:
@@ -121,28 +128,43 @@ class NavigationGrid:
         else:
             self.selected.add(pos)
 
-def get_joystick_input():
-    """Get joystick input with debouncing"""
+def read_encoder():
+    """Read rotary encoder and update position"""
+    current_a = encoder_pins['ENCA'].value()
+    current_b = encoder_pins['ENCB'].value()
+    
+    # Check for state changes on encoder A pin
+    if encoder_state['last_a'] != current_a:
+        if current_a == 0:  # Falling edge on A
+            if current_b == 0:
+                encoder_state['position'] += 1  # Clockwise
+            else:
+                encoder_state['position'] -= 1  # Counter-clockwise
+    
+    encoder_state['last_a'] = current_a
+    encoder_state['last_b'] = current_b
+    
+    return encoder_state['position']
+
+def get_encoder_input():
+    """Get encoder input with debouncing"""
     states = {}
-    for name, pin in joystick_pins.items():
-        # Pins are active low, so not pin.value() is True when pressed
-        states[name] = not pin.value()
+    for name, pin in encoder_pins.items():
+        if name.startswith('SW'):
+            # Pins are active low, so not pin.value() is True when pressed
+            states[name] = not pin.value()
     
     # Return the first pressed direction or button
-    if states['UP']:
+    if states['SW4']:  # Up
         return 'UP'
-    elif states['DOWN']:
+    elif states['SW2']:  # Down
         return 'DOWN'
-    elif states['LEFT']:
+    elif states['SW5']:  # Left
         return 'LEFT'
-    elif states['RIGHT']:
+    elif states['SW3']:  # Right
         return 'RIGHT'
-    elif states['MID']:
+    elif states['SW1']:  # Center
         return 'MID'
-    elif states['SET']:
-        return 'SET'
-    elif states['RST']:
-        return 'RST'
     else:
         return None
 
@@ -194,7 +216,7 @@ def menu_demo(oled):
             oled.fill_rect(width - 3, sb_pos, 3, sb_height, 1)
         
         # Draw status
-        oled.text("MID:Select RST:Exit", 0, height - 8, 1)
+        oled.text("SW1:Select Rotate:Scroll", 0, height - 8, 1)
         
         # Update display
         oled.show()
@@ -202,7 +224,7 @@ def menu_demo(oled):
         # Wait for input
         input_value = None
         while input_value is None:
-            input_value = get_joystick_input()
+            input_value = get_encoder_input()
             time.sleep(0.05)
         
         # Process input
@@ -220,15 +242,15 @@ def menu_demo(oled):
             oled.show()
             
             # Wait for any button press
-            while get_joystick_input() is not None:
+            while get_encoder_input() is not None:
                 time.sleep(0.05)  # Wait for release
-            while get_joystick_input() is None:
+            while get_encoder_input() is None:
                 time.sleep(0.05)  # Wait for press
-        elif input_value == 'RST':
-            return
+        # RST button not available on encoder, use long press of center button
+        # or implement scroll-based exit
         
         # Debounce
-        while get_joystick_input() is not None:
+        while get_encoder_input() is not None:
             time.sleep(0.05)
 
 def drawing_demo(oled):
@@ -240,12 +262,12 @@ def drawing_demo(oled):
     # Clear display
     oled.fill(0)
     oled.text("Drawing Demo", 0, 0, 1)
-    oled.text("MID: Toggle draw", 0, height - 16, 1)
-    oled.text("RST: Exit", 0, height - 8, 1)
+    oled.text("SW1: Toggle draw", 0, height - 16, 1)
+    oled.text("Rotate: Exit", 0, height - 8, 1)
     oled.show()
     
     while True:
-        input_value = get_joystick_input()
+        input_value = get_encoder_input()
         
         if input_value:
             if input_value == 'UP' and y > 0:
@@ -260,7 +282,11 @@ def drawing_demo(oled):
                 drawing = not drawing
                 status = "Drawing ON" if drawing else "Drawing OFF"
                 draw_status(oled, status)
-            elif input_value == 'RST':
+            
+            # Use encoder rotation to exit drawing mode
+            encoder_pos = read_encoder()
+            if encoder_pos > 2 or encoder_pos < -2:  # Significant rotation to exit
+                encoder_state['position'] = 0  # Reset position
                 return
             
             # Draw pixel if drawing is enabled
@@ -321,11 +347,11 @@ def main():
         oled.show()
         
         # Wait for any button press
-        while get_joystick_input() is None:
+        while get_encoder_input() is None:
             time.sleep(0.1)
         
         # Debounce
-        while get_joystick_input() is not None:
+        while get_encoder_input() is not None:
             time.sleep(0.05)
         
         # Grid navigation demo
@@ -343,7 +369,7 @@ def main():
         try:
             while True:
                 current_time = time.time()
-                input_value = get_joystick_input()
+                input_value = get_encoder_input()
                 
                 # Process input with debouncing
                 if input_value and (input_value != last_input or current_time - last_input_time > debounce_time):
@@ -363,19 +389,19 @@ def main():
                         print(f"{status} position ({grid.current_row}, {grid.current_col})")
                         draw_status(oled, f"{status} {grid.current_row+1},{grid.current_col+1}")
                     
-                    elif input_value == 'SET':
-                        # Switch to menu demo
+                    # Additional features can be accessed via encoder rotation
+                    # Check for encoder rotation for menu navigation
+                    encoder_pos = read_encoder()
+                    if encoder_pos > 0:
+                        encoder_state['position'] = 0  # Reset position
                         print("Switching to menu demo...")
                         menu_demo(oled)
-                        # Return to grid after menu demo
                         grid.draw_grid()
                         draw_status(oled, "Back to grid demo")
-                    
-                    elif input_value == 'RST':
-                        # Switch to drawing demo
+                    elif encoder_pos < 0:
+                        encoder_state['position'] = 0  # Reset position
                         print("Switching to drawing demo...")
                         drawing_demo(oled)
-                        # Return to grid after drawing demo
                         grid.draw_grid()
                         draw_status(oled, "Back to grid demo")
                 

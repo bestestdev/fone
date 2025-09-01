@@ -29,7 +29,7 @@ A modern take on the classic Nokia cell phone experience, built with a Raspberry
 
 ### Display & Input
 - **2.42" OLED Display (SSD1309)** - monochrome, 128x64 resolution, SPI interface, low power consumption
-- **5-Way Digital Navigation Joystick** - Navigation, selection, and menu control
+- **ANO Directional Navigation and Scroll Wheel Rotary Encoder** - Navigation, selection, scroll, and menu control
 - **3V Coin Vibration Motor** - Haptic feedback and notifications
 
 ## Features
@@ -41,8 +41,9 @@ A modern take on the classic Nokia cell phone experience, built with a Raspberry
 - **Call History** - Track incoming, outgoing, and missed calls
 
 ### Enhanced User Experience
-- **Improved Text Input** - Modern T9-style predictive text with joystick navigation
-- **Menu Navigation** - Intuitive interface designed for joystick control
+- **Improved Text Input** - Modern T9-style predictive text with encoder navigation
+- **Menu Navigation** - Intuitive interface designed for encoder and directional button control
+- **Scroll Wheel Support** - Rotary encoder provides smooth scrolling through lists and menus
 - **Low Power Operation** - E-paper display and efficient power management
 - **Haptic Feedback** - Vibration for notifications and user interactions
 
@@ -66,7 +67,7 @@ A modern take on the classic Nokia cell phone experience, built with a Raspberry
 
 ### Interface
 - **Display**: 2.42" monochrome OLED (128x64px)
-- **Input**: 5-way digital joystick with SET/RST buttons
+- **Input**: ANO rotary encoder with directional navigation buttons
 - **Audio**: Full-duplex voice communication
 - **Feedback**: Vibration motor for alerts
 
@@ -101,30 +102,31 @@ The SIM7600G module connects via UART and requires the following connections:
 - **Status**: Monitor this pin to check if module is powered and ready
 - **Dual Ground**: Connect both ground pins for stable operation
 
-### 5-Way Digital Navigation Joystick
+### ANO Directional Navigation and Scroll Wheel Rotary Encoder
 
-The primary input is a 5-way digital joystick module, providing directional control, a center-press button, and two additional buttons for 'SET' and 'RST'.
+The primary input is an ANO directional navigation and scroll wheel rotary encoder, providing directional control, rotary scroll input, and a center-press button.
 
-| Joystick Pin | Description | Connection | Notes |
-|--------------|-------------|------------|-------|
-| **UP** | Up Direction | **GP18** (Pin 24) | Digital input |
-| **DOWN** | Down Direction | **GP19** (Pin 25) | Digital input |
-| **LEFT** | Left Direction | **GP4** (Pin 6) | Digital input |
-| **RIGHT**| Right Direction | **GP5** (Pin 7) | Digital input |
-| **MID** | Center Button | **GP6** (Pin 9) | Digital input |
-| **SET** | Set Button | **GP17** (Pin 22) | Digital input |
-| **RST** | Reset Button | **GP22** (Pin 29) | Digital input |
+| Encoder Pin | Description | Connection | Notes |
+|-------------|-------------|------------|-------|
+| **ENCA** | Encoder A Pin | **GP17** (Pin 22) | Rotary encoder quadrature A |
+| **ENCB** | Encoder B Pin | **GP22** (Pin 29) | Rotary encoder quadrature B |
+| **SW1** | Center Button | **GP6** (Pin 9) | Digital input |
+| **SW2** | Down Button | **GP5** (Pin 7) | Digital input |
+| **SW3** | Right Button | **GP4** (Pin 6) | Digital input |
+| **SW4** | Up Button | **GP19** (Pin 25) | Digital input |
+| **SW5** | Left Button | **GP18** (Pin 24) | Digital input |
 | **COM** | Common | **GND** (Pin 38) | Common ground for all switches |
 
 #### Key Points:
-- **Digital Input**: All joystick pins are simple digital inputs.
-- **Wiring**: Connect the COM pin to GND and configure each GPIO pin as an input with an internal pull-up resistor.
-- **Active Low**: A button press will pull the corresponding GPIO pin to ground (LOW).
-- **Pin Mapping**: Pins selected to avoid conflicts with other components and reserve ADC-capable pins for future use.
+- **Rotary Encoder**: ENCA/ENCB provide quadrature signals for scroll wheel functionality
+- **Digital Buttons**: All switch pins (SW1-SW5) are simple digital inputs
+- **Wiring**: Connect the COM pin to GND and configure each GPIO pin as an input with an internal pull-up resistor
+- **Active Low**: Button presses and encoder transitions pull pins to ground (LOW)
+- **Quadrature Decoding**: Software tracks encoder A/B state changes to determine rotation direction and steps
 
 ### Dual Analog Joysticks via ADS1115 ADC
 
-> **Note:** This component has been deprecated and replaced by the 5-Way Digital Navigation Joystick.
+> **Note:** This component has been deprecated and replaced by the ANO Directional Navigation and Scroll Wheel Rotary Encoder.
 
 The phone uses two analog joysticks for navigation and input, connected through an ADS1115 16-bit ADC for full 4-channel analog precision.
 
